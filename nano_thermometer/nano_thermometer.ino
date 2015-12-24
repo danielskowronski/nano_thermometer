@@ -25,37 +25,39 @@ void loop(){
   for (int i=1;i<128;i++){
     data[i-1]=data[i];
   }
-
-  float ftempC=0;
-  for (int i=0;i<256;i++){
-    ftempC += 1000* 1.1*analogRead(7)*10/1024 -200;
+  
+  double ftempC=0;
+  for (int i=0;i<100;i++){
+    ftempC += (1000* 1.1*analogRead(7)*10)/1024;
   }
-  ftempC/=2560;
-  int tempC = ftempC;
+  ftempC/=1000;
+  int tempC = ftempC - 20; //LM35 without resistor: 2..150'C
   data[127]=tempC;
   if (data[127]>360) data[127]=360;
   if (data[127]<130) data[127]=130;
   
-  char cha[25];
-  sprintf(cha, "T=%i.%i'C", tempC/10, tempC%10);
-
-  
-  for (int l=0;l<6;l++){
+  unsigned long long m=millis();
+  char v,w;
+  for (int l=5;l>=0;l--){
     display.IIC_SetPos(0,2+l);  
     display.Begin_IIC_Data();
-    for (int i=0;i<127;i++){
-      int v = (360-data[i])/5;
-      char u;
-      if (v>=(l+1)*8) { u=8; }
-      else if (v<(l-0)*8) { u=0; }
-      else { u = v%(l*8); u%=8; }
-      char w = 256-pow(2.0, u);
+    int i=0; for (int m=0;m<=128;m++) for (;i<m && i<127;i++){ //redraw optimization
+      v = (360-data[i])/5;
+      if (v>=(l+1)*8) { v=8; /*empty*/}
+      else if (v<l*8) { v=0; /*full*/}
+      else { v%=(l*8); v%=8; }
+      w = 255>>v<<v; //w = v*zeros from left, rest are ones
       display.Write_IIC_Byte(w);
     }
     display.IIC_Stop();  
   }
-  
+  m = millis()-m;
+
+  char cha[25];
+  sprintf(cha, "T=%i.%i'C", tempC/10, tempC%10);
   display.Char_F8x16(0,0,cha);
+  sprintf(cha, "%ims", m);
+  display.Char_F8x16(72,0,cha);
 
   delay(0);//delay of plot redraw =approx 380ms
 }
