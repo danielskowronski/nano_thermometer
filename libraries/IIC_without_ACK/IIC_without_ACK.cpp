@@ -149,7 +149,7 @@ void IIC_without_ACK::Char_F6x8(unsigned char x, unsigned char y, const char ch[
 
 //显示8x16 ASCII字符 -- 使用此函数时，将此处以及IIC_without_ACK.h中相应的注释部分移除。
 
-void IIC_without_ACK::Char_F8x16(unsigned char x, unsigned char y,const char ch[])
+void IIC_without_ACK::Char_F8x16(unsigned char x, unsigned char y,const char ch[], bool negate)
 {
 	unsigned char c=0,i=0,j=0;
 	while (ch[j]!='\0')
@@ -164,14 +164,18 @@ void IIC_without_ACK::Char_F8x16(unsigned char x, unsigned char y,const char ch[
 		Begin_IIC_Data();
 		for(i=0;i<8;i++)
 		{
-      Write_IIC_Byte(pgm_read_byte(&(font8X16[c*16+i])));
-    }
+			char z = pgm_read_byte(&(font8X16[c*16+i]));
+			if (negate) z = z xor 255;
+			Write_IIC_Byte(z);
+		}
     IIC_Stop();
 		IIC_SetPos(x,y+1);
 		Begin_IIC_Data();
 		for(i=0;i<8;i++)
 		{
-      Write_IIC_Byte(pgm_read_byte(&(font8X16[c*16+i+8])));
+			char z = pgm_read_byte(&(font8X16[c*16+i+8]));
+			if (negate) z = z xor 255 	 ;
+			Write_IIC_Byte(z);
     }
     IIC_Stop();
 		x+=8;

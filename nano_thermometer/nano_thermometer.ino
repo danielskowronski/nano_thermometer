@@ -37,12 +37,18 @@ void loop(){
   if (data[127]<130) data[127]=130;
   
   unsigned long long m=millis();
-  char v,w;
+  char v,w; int tmax=0, tmin=15000;
   for (int l=5;l>=0;l--){
     display.IIC_SetPos(0,2+l);  
     display.Begin_IIC_Data();
     int i=0; for (int m=0;m<=128;m++) for (;i<m && i<127;i++){ //redraw optimization
       v = (360-data[i])/5;
+      
+      if (data[i]!=0){
+        if (data[i]>tmax) tmax=data[i]; 
+        if (data[i]<tmin) tmin=data[i];
+      }
+      
       if (v>=(l+1)*8) { v=8; /*empty*/}
       else if (v<l*8) { v=0; /*full*/}
       else { v%=(l*8); v%=8; }
@@ -54,10 +60,12 @@ void loop(){
   m = millis()-m;
 
   char cha[25];
-  sprintf(cha, "T=%i.%i'C", tempC/10, tempC%10);
-  display.Char_F8x16(0,0,cha);
-  sprintf(cha, "%ims", m);
+  sprintf(cha, "T=%02i.%i'C", tempC/10, tempC%10);
+  display.Char_F8x16(0,0,cha,true);
+
+  if (tmin>tmax) tmin=tmax;
+  sprintf(cha, "D=%02i.%iK", (tmax-tmin)/10, (tmax-tmin)%10); //temp delta
   display.Char_F8x16(72,0,cha);
 
-  delay(0);//delay of plot redraw =approx 380ms
+  delay(500-m);//delay of plot redraw =approx 160, target = 500
 }
